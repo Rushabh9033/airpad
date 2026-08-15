@@ -1,0 +1,28 @@
+name: airpad
+description: "Phone-as-wireless-trackpad for Windows and macOS (Phase 1)."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  mobx: ^2.5.0
+  flutter_mobx: ^2.3.0
+  mobx_codegen: ^2.7.0
+  qr_code_scanner_plus: ^2.1.2
+  mobile_scanner: ^7.0.0
+  go_router: ^16.0.0
+  shared_preferences: ^2.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.0
+
+flutter:
+  uses-material-design: true
