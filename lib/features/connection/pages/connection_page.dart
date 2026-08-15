@@ -33,10 +33,8 @@ class _ConnectionPageState extends State<ConnectionPage> {
     final h = p.getString(_prefHost);
     final pt = p.getInt(_prefPort);
     if (!mounted) return;
-    setState(() {
-      if (h != null && h.isNotEmpty) _hostCtrl.text = h;
-      if (pt != null) _portCtrl.text = '$pt';
-    });
+    if (h != null && h.isNotEmpty) _hostCtrl.text = h;
+    if (pt != null) _portCtrl.text = '$pt';
   }
 
   Future<void> _savePrefs(String host, int port) async {
@@ -54,13 +52,15 @@ class _ConnectionPageState extends State<ConnectionPage> {
   }
 
   Future<void> _connect() async {
+    // Dismiss keyboard first so it doesn't swallow the button area.
+    FocusScope.of(context).unfocus();
     final host = _hostCtrl.text.trim();
     final port = int.tryParse(_portCtrl.text.trim()) ?? defaultPort;
     if (host.isEmpty) {
       _hostFocus.requestFocus();
+      if (mounted) setState(() {});
       return;
     }
-    FocusScope.of(context).unfocus();
     await _savePrefs(host, port);
     await widget.controller.connect(host, port);
     if (!mounted) return;
@@ -79,12 +79,13 @@ class _ConnectionPageState extends State<ConnectionPage> {
         title: const Text('Airpad'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Observer(
             builder: (_) {
               final status = widget.controller.status.value;
               final error = widget.controller.lastError.value;
+              final hostEmpty = _hostCtrl.text.trim().isEmpty;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -111,7 +112,22 @@ class _ConnectionPageState extends State<ConnectionPage> {
                     focusNode: _hostFocus,
                     keyboardType: TextInputType.number,
                     hint: 'e.g. 192.168.1.42',
+                    onChanged: (_) {
+                      // Rebuild so the inline hint shows/hides.
+                      setState(() {});
+                    },
                   ),
+                  if (hostEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Host IP is required.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 16),
                   _Field(
                     label: 'Port',
@@ -120,7 +136,10 @@ class _ConnectionPageState extends State<ConnectionPage> {
                     hint: '9876',
                   ),
                   const SizedBox(height: 32),
-                  _StatusPill(status: status, error: error),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _StatusPill(status: status, error: error),
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: status == ConnectionStatus.connecting
@@ -181,6 +200,7 @@ class _Field extends StatelessWidget {
   final TextInputType keyboardType;
   final String hint;
   final FocusNode? focusNode;
+  final ValueChanged<String>? onChanged;
 
   const _Field({
     required this.label,
@@ -188,6 +208,7 @@ class _Field extends StatelessWidget {
     required this.keyboardType,
     required this.hint,
     this.focusNode,
+    this.onChanged,
   });
 
   @override
@@ -210,6 +231,8 @@ class _Field extends StatelessWidget {
           keyboardType: keyboardType,
           autocorrect: false,
           enableSuggestions: false,
+          onChanged: onChanged,
+          textInputAction: TextInputAction.done,
           style: const TextStyle(color: Colors.white, fontSize: 16),
           cursorColor: const Color(0xFF3D7CFF),
           decoration: InputDecoration(
