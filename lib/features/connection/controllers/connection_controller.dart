@@ -5,6 +5,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:mobx/mobx.dart';
 
 import '../../../core/protocol/codec.dart';
@@ -39,23 +40,37 @@ class ConnectionController {
   final Observable<String> lastError = Observable<String>('');
 
   Future<void> connect(String host, int port) async {
+    debugPrint('[airpad] connect() called status=${status.value} host=$host port=$port');
     if (status.value == ConnectionStatus.connecting ||
         status.value == ConnectionStatus.connected) {
+      debugPrint('[airpad] connect() early-return (busy)');
       return;
     }
-    status.value = ConnectionStatus.connecting;
-    lastError.value = '';
+    runInAction(() {
+      status.value = ConnectionStatus.connecting;
+      lastError.value = '';
+    });
     try {
+      debugPrint('[airpad] dialing TCP...');
       await transport.connect(host: host, port: port);
+      debugPrint('[airpad] TCP ok, sending HELLO');
       await _sendHello();
-      status.value = ConnectionStatus.connected;
+      await _disconnectSub?.cancel();
+      runInAction(() {
+        status.value = ConnectionStatus.connected;
+      });
       _disconnectSub = transport.disconnected.listen((_) {
-        status.value = ConnectionStatus.error;
-        lastError.value = transport.lastError ?? 'disconnected';
+        runInAction(() {
+          status.value = ConnectionStatus.error;
+          lastError.value = transport.lastError ?? 'disconnected';
+        });
       });
     } on Object catch (e) {
-      status.value = ConnectionStatus.error;
-      lastError.value = _humanize(e.toString());
+      debugPrint('[airpad] connect failed: $e');
+      runInAction(() {
+        status.value = ConnectionStatus.error;
+        lastError.value = _humanize(e.toString());
+      });
     }
   }
 
@@ -63,7 +78,9 @@ class ConnectionController {
     await _disconnectSub?.cancel();
     _disconnectSub = null;
     await transport.close();
-    status.value = ConnectionStatus.disconnected;
+    runInAction(() {
+      status.value = ConnectionStatus.disconnected;
+    });
   }
 
   Future<void> _sendHello() async {
