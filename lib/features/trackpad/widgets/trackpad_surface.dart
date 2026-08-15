@@ -97,11 +97,30 @@ class _TrackpadSurfaceState extends State<TrackpadSurface> {
 
   void _onDown(PointerDownEvent e) {
     widget.recognizer.onDown(e);
-    // First finger down -> LEFT button down (trackpad default).
+    final size = _lastSize ?? MediaQuery.of(context).size;
+    // Send a TOUCH_DOWN with the initial position so the host can
+    // immediately move the cursor to that point — without this, the
+    // first 8 px of any drag are silently dropped (recognizer waits
+    // for movement to exceed dragThresholdPx before emitting).
     if (widget.recognizer.activeCount == 1) {
+      widget.sender.sendTouchDown(TouchPoint(
+        fingerId: e.pointer,
+        x: (e.localPosition.dx / size.width).clamp(0.0, 1.0),
+        y: (e.localPosition.dy / size.height).clamp(0.0, 1.0),
+        pressure: e.pressure,
+        tUs: DateTime.now().microsecondsSinceEpoch,
+      ));
+      // First finger down -> LEFT button down (trackpad default).
       widget.sender.sendButton(const ButtonEvent(0, 1));
     } else if (widget.recognizer.activeCount == 2 &&
         widget.enableTwoFingerRightClick) {
+      widget.sender.sendTouchDown(TouchPoint(
+        fingerId: e.pointer,
+        x: (e.localPosition.dx / size.width).clamp(0.0, 1.0),
+        y: (e.localPosition.dy / size.height).clamp(0.0, 1.0),
+        pressure: e.pressure,
+        tUs: DateTime.now().microsecondsSinceEpoch,
+      ));
       widget.sender.sendButton(const ButtonEvent(1, 1));
     }
     _markSent();

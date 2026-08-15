@@ -86,9 +86,10 @@ class TrackpadGestureRecognizer {
       // Two-finger pan = scroll.
       final s = scrollSpeed();
       emitScroll(ScrollEvent(dx * s, dy * s));
-    } else if (p.moved) {
-      // Drag: emit current position. Sensitivity multiplies cursor travel
-      // on the host, not on the phone — the wire stays normalized 0..1.
+    } else {
+      // Always emit the current position. The host needs every move
+      // to keep the cursor smooth; the tap-vs-drag decision uses
+      // p.moved at TOUCH_UP time, not here.
       emitTouch(TouchPoint(
         fingerId: p.id,
         x: (p.x / surface.width).clamp(0.0, 1.0),
