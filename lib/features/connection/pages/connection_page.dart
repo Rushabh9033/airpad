@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/connection_controller.dart';
+import 'scan_qr_page.dart';
 
 class ConnectionPage extends StatefulWidget {
   final ConnectionController controller;
@@ -69,6 +70,18 @@ class _ConnectionPageState extends State<ConnectionPage> {
     }
   }
 
+  Future<void> _scanQr() async {
+    FocusScope.of(context).unfocus();
+    final r = await context.push<ScanResult>('/scan');
+    if (r == null || !mounted) return;
+    setState(() {
+      _hostCtrl.text = r.host;
+      _portCtrl.text = '${r.port}';
+    });
+    // Auto-trigger connect with the scanned values.
+    await _connect();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,6 +90,13 @@ class _ConnectionPageState extends State<ConnectionPage> {
         backgroundColor: const Color(0xFF141418),
         elevation: 0,
         title: const Text('Airpad'),
+        actions: [
+          IconButton(
+            tooltip: 'Scan host QR',
+            icon: const Icon(Icons.qr_code_scanner_outlined),
+            onPressed: _scanQr,
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

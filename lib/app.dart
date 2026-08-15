@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'core/transport/tcp_transport.dart';
 import 'features/connection/controllers/connection_controller.dart';
 import 'features/connection/pages/connection_page.dart';
+import 'features/connection/pages/scan_qr_page.dart';
 import 'features/settings/pages/settings_page.dart';
 import 'features/trackpad/pages/trackpad_page.dart';
 
@@ -80,6 +81,10 @@ class _AirpadAppState extends State<AirpadApp> {
         GoRoute(
           path: '/settings',
           builder: (ctx, st) => SettingsPage(store: _settings),
+        ),
+        GoRoute(
+          path: '/scan',
+          builder: (ctx, st) => const ScanQrPage(),
         ),
       ],
     );
