@@ -72,16 +72,20 @@ class ConnectionController {
   }
 
   String _humanize(String raw) {
-    if (raw.contains('refused')) {
-      return 'Connection refused. Is the airpad host running?';
+    final r = raw.toLowerCase();
+    if (r.contains('refused') || r.contains('actively refused')) {
+      return 'Connection refused. Is the airpad host running on this IP?';
     }
-    if (raw.contains('SocketException')) {
+    if (r.contains('timed out') || r.contains('timeout')) {
+      return 'Connection timed out. Phone and laptop must be on the same Wi-Fi.';
+    }
+    if (r.contains('unreachable') || r.contains('no route')) {
+      return 'Host unreachable. Check the IP and that both devices are on the same network.';
+    }
+    if (r.contains('failed host lookup') || r.contains('socketexception')) {
       return 'Cannot reach host. Check the IP address.';
     }
-    if (raw.contains('timeout')) {
-      return 'Connection timed out.';
-    }
-    return 'Disconnected.';
+    return 'Disconnected: $raw';
   }
 
   void dispose() {

@@ -138,7 +138,11 @@ class _ConnectionPageState extends State<ConnectionPage> {
                   const SizedBox(height: 32),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: _StatusPill(status: status, error: error),
+                    child: _StatusPill(
+                      status: status,
+                      error: error,
+                      fallbackError: error,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
@@ -256,16 +260,26 @@ class _Field extends StatelessWidget {
 class _StatusPill extends StatelessWidget {
   final ConnectionStatus status;
   final String error;
-  const _StatusPill({required this.status, required this.error});
+  final String fallbackError;
+  const _StatusPill({
+    required this.status,
+    required this.error,
+    required this.fallbackError,
+  });
 
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      ConnectionStatus.disconnected => ('Disconnected', const Color(0xFF6B6B70)),
-      ConnectionStatus.connecting => ('Connecting...', const Color(0xFFFFC857)),
       ConnectionStatus.connected => ('Connected', const Color(0xFF6CE38C)),
-      ConnectionStatus.error => (
-          error.isNotEmpty ? error : 'Error',
+      ConnectionStatus.connecting => ('Connecting...', const Color(0xFFFFC857)),
+      _ => (
+          // disconnected + error both surface the last error string so
+          // you actually see *why* the connect failed.
+          error.isNotEmpty
+              ? error
+              : fallbackError.isNotEmpty
+                  ? fallbackError
+                  : 'Disconnected',
           const Color(0xFFFF7A7A),
         ),
     };
@@ -293,6 +307,7 @@ class _StatusPill extends StatelessWidget {
               label,
               style: TextStyle(color: color, fontSize: 13),
               overflow: TextOverflow.ellipsis,
+              maxLines: 3,
             ),
           ),
         ],
